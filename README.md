@@ -21,19 +21,26 @@
 
 ## 🎵 Overview
 
-**SoulX-Singer** is a high-fidelity, zero-shot singing voice synthesis model that enables users to generate realistic singing voices for unseen singers.  
-It supports **melody-conditioned (F0 contour)** and **score-conditioned (MIDI notes)** control for precise pitch, rhythm, and expression.
+**SoulX-Singer** is a high-fidelity, zero-shot singing voice synthesis model that enables users to generate realistic singing voices for unseen singers. It supports **melody-conditioned (F0 contour)** and **score-conditioned (MIDI notes)** control for precise pitch, rhythm, and expression.
+
+**SoulX-Singer-SVC** is a singing voice conversion model finetuned from **SoulX-Singer**, enabling users to perform singing voice conversion without lyric and MIDI transcriptions.
 
 ---
 
 ## ✨ Key Features
 
+#### SoulX-Singer
 - **🎤 Zero-Shot Singing** – Generate high-fidelity voices for unseen singers, no fine-tuning needed.  
 - **🎵 Flexible Control Modes** – Melody (F0) and Score (MIDI) conditioning.  
 - **📚 Large-Scale Dataset** – 42,000+ hours of aligned vocals, lyrics, notes across Mandarin, English, Cantonese.  
 - **🧑‍🎤 Timbre Cloning** – Preserve singer identity across languages, styles, and edited lyrics.  
 - **✏️ Singing Voice Editing** – Modify lyrics while keeping natural prosody.  
 - **🌐 Cross-Lingual Synthesis** – High-fidelity synthesis by disentangling timbre from content.  
+
+#### SoulX-Singer-SVC
+- **🎙️ Zero-Shot Timbre and Style Transfer** – Transfer singer identity and style to unseen voices without per-speaker fine-tuning.
+- **🌍 Language-Agnostic Conversion** – Works across multilingual singing content.
+- **🔄 Transcription-Free Audio-to-Audio Conversion** – Convert target singing directly without lyrics transcription or MIDI inputs.
 
 ---
 
@@ -109,11 +116,8 @@ Download the SVS, SVC model and preprocessing models:
 ```sh
 pip install -U huggingface_hub
 
-# Download the SoulX-Singer SVS model
+# Download the SoulX-Singer SVS and SVC model
 hf download Soul-AILab/SoulX-Singer --local-dir pretrained_models/SoulX-Singer
-
-# Download the SoulX-Singer SVC model
-hf download Soul-AILab/SoulX-Singer-SVC --local-dir pretrained_models/SoulX-Singer-SVC
 
 # Download models required for preprocessing
 hf download Soul-AILab/SoulX-Singer-Preprocess --local-dir pretrained_models/SoulX-Singer-Preprocess
