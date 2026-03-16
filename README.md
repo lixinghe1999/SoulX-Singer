@@ -63,11 +63,16 @@
 <https://github.com/user-attachments/assets/2eb260fe-6f0b-408c-aab8-5b81ddddb284>
 
 </div>
+<div align="center">
+
+<https://github.com/user-attachments/assets/aed15fc9-14c3-44fc-9146-f6d9fef894d3>
+
+</div>
 
 ---
 
 ## 📰 News
-- **[2026-02-15]** SoulX-Singer-SVC is released.
+- **[2026-03-16]** [SoulX-Singer-SVC](https://huggingface.co/Soul-AILab/SoulX-Singer/blob/main/model-svc.pt) is released, and [SoulX-Singer Online Demo](https://huggingface.co/spaces/Soul-AILab/SoulX-Singer) has been updated to support singing voice conversion (SVC).
 - **[2026-02-12]** [SoulX-Singer Eval Dataset](https://huggingface.co/datasets/Soul-AILab/SoulX-Singer-Eval-Dataset) is now available on Hugging Face Datasets.
 - **[2026-02-09]** [SoulX-Singer Online Demo](https://huggingface.co/spaces/Soul-AILab/SoulX-Singer) is live on Hugging Face Spaces — try singing voice synthesis in your browser.
 - **[2026-02-08]** [MIDI Editor](https://huggingface.co/spaces/Soul-AILab/SoulX-Singer-Midi-Editor) is available on Hugging Face Spaces.
@@ -174,7 +179,7 @@ python webui_svc.py
 - [x] 📊 Release the SoulX-Singer-Eval benchmark  
 - [ ] 🎹 Inference support for user-friendly MIDI-based input
 - [ ] 📚 Comprehensive tutorials and usage documentation  
-- [ ] 🎵 Support for wav-to-wav singing voice conversion (without transcription)
+- [x] 🎵 Support for wav-to-wav singing voice conversion (without transcription)
 
 
 ## 🙏 Acknowledgements
