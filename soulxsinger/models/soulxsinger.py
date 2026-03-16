@@ -4,12 +4,17 @@ import torch.nn.functional as F
 import math
 import numpy as np
 from typing import Optional, Dict, Any, List
+from contextlib import nullcontext
 
 from soulxsinger.models.modules.vocoder import Vocoder
 from soulxsinger.models.modules.decoder import CFMDecoder
 from soulxsinger.models.modules.convnext import ConvNeXtV2Block
 from soulxsinger.models.modules.mel_transform import MelSpectrogramEncoder
 
+
+def _autocast_if(enabled: bool):
+    """Return autocast(context) if enabled else no-op context. Use: with _autocast_if(use_amp): ..."""
+    return torch.amp.autocast(device_type="cuda", enabled=True) if enabled else nullcontext()
 
 class SoulXSinger(nn.Module):
     """
@@ -102,7 +107,7 @@ class SoulXSinger(nn.Module):
         
         return f0_coarse
 
-    def infer(self, meta: dict, auto_shift=False, pitch_shift=0, n_steps=32, cfg=3, control="melody"):
+    def infer(self, meta: dict, auto_shift=False, pitch_shift=0, n_steps=32, cfg=3, control="melody", use_fp16=False):
         
         gt_note_text = meta['target']['phoneme']
         gt_mel2note = meta['target']['mel2note']
@@ -147,8 +152,13 @@ class SoulXSinger(nn.Module):
         if gt_note_pitch is None or pt_note_pitch is None:
             gt_note_pitch, pt_note_pitch = torch.zeros_like(gt_note_type).int().to(gt_note_type.device), torch.zeros_like(pt_note_type).int().to(pt_note_type.device)
 
-        # convert prompt waveform to mel spectrogram
-        pt_mel = self.mel(pt_wav)
+        use_fp16 = use_fp16 and pt_wav.is_cuda
+        # mel is kept in fp32 (see build_model: model.mel.float() after model.half())
+        pt_mel = self.mel(pt_wav.float() if pt_wav.dtype != torch.float32 else pt_wav)
+        if use_fp16:
+            pt_mel = pt_mel.half()
+            pt_f0 = pt_f0.half()
+            gt_f0 = gt_f0.half()
 
         len_prompt = pt_note_pitch.shape[1]
         len_prompt_mel = pt_f0.shape[1]
@@ -165,23 +175,23 @@ class SoulXSinger(nn.Module):
         note_pitch[note_pitch > 0] = note_pitch[note_pitch > 0] + f0_shift
         note_pitch = torch.clamp(note_pitch, 0, 255)
 
-        features = self.note_pitch_encoder(note_pitch) + self.note_type_encoder(note_type) + self.note_text_encoder(note_text)
-        
-        features = self.preflow(features)
-        features = self.expand_states(features, mel2note)
-        features = features + self.f0_encoder(f0_course)
-    
-        gt_decoder_inp = features[:, len_prompt_mel:, :]
-        pt_decoder_inp = features[:, :len_prompt_mel, :]
+        with _autocast_if(use_fp16):
+            features = self.note_pitch_encoder(note_pitch) + self.note_type_encoder(note_type) + self.note_text_encoder(note_text)
 
-        generated_mel = self.cfm_decoder.reverse_diffusion(
-            pt_mel,
-            pt_decoder_inp,
-            gt_decoder_inp,
-            n_timesteps=n_steps,
-            cfg=cfg
-        )
-        
-        generated_audio = self.vocoder(generated_mel.transpose(1, 2)[0:1, ...])
-        
+            features = self.preflow(features)
+            features = self.expand_states(features, mel2note)
+            features = features + self.f0_encoder(f0_course)
+
+            gt_decoder_inp = features[:, len_prompt_mel:, :]
+            pt_decoder_inp = features[:, :len_prompt_mel, :]
+
+            generated_mel = self.cfm_decoder.reverse_diffusion(
+                pt_mel,
+                pt_decoder_inp,
+                gt_decoder_inp,
+                n_timesteps=n_steps,
+                cfg=cfg
+            )
+            generated_audio = self.vocoder(generated_mel.transpose(1, 2)[0:1, ...]).float()
+
         return generated_audio

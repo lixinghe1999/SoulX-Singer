@@ -15,6 +15,7 @@ save_dir=example/transcriptions/zh_prompt
 language=Mandarin
 vocal_sep=False
 max_merge_duration=30000
+midi_transcribe=True    # Whether to transcribe vocal midi, set True for singing voice synthesis, False for singing voice conversion
 
 python -m preprocess.pipeline \
     --audio_path $audio_path \
@@ -22,7 +23,8 @@ python -m preprocess.pipeline \
     --language $language \
     --device $device \
     --vocal_sep $vocal_sep \
-    --max_merge_duration $max_merge_duration
+    --max_merge_duration $max_merge_duration \
+    --midi_transcribe $midi_transcribe
 
 
 ####### Run Target Annotation #######
@@ -31,6 +33,7 @@ save_dir=example/transcriptions/music
 language=Mandarin
 vocal_sep=True
 max_merge_duration=60000
+midi_transcribe=True    # Whether to transcribe vocal midi, set True for singing voice synthesis, False for singing voice conversion
 
 python -m preprocess.pipeline \
     --audio_path $audio_path \
@@ -38,4 +41,5 @@ python -m preprocess.pipeline \
     --language $language \
     --device $device \
     --vocal_sep $vocal_sep \
-    --max_merge_duration $max_merge_duration
+    --max_merge_duration $max_merge_duration \
+    --midi_transcribe $midi_transcribe

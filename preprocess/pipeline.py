@@ -16,12 +16,13 @@ from preprocess.tools import (
 
 
 class PreprocessPipeline:
-    def __init__(self, device: str, language: str, save_dir: str, vocal_sep: bool = True, max_merge_duration: int = 60000):
+    def __init__(self, device: str, language: str, save_dir: str, vocal_sep: bool = True, max_merge_duration: int = 60000, midi_transcribe: bool = True):
         self.device = device
         self.language = language
         self.save_dir = save_dir
         self.vocal_sep = vocal_sep
         self.max_merge_duration = max_merge_duration
+        self.midi_transcribe = midi_transcribe
 
         if vocal_sep:
             self.vocal_separator = VocalSeparator(
@@ -37,26 +38,31 @@ class PreprocessPipeline:
             model_path="pretrained_models/SoulX-Singer-Preprocess/rmvpe/rmvpe.pt",
             device=device,
         )
-        self.vocal_detector = VocalDetector(
-            cut_wavs_output_dir=  f"{save_dir}/cut_wavs",
-        )
-        self.lyric_transcriber = LyricTranscriber(
-            zh_model_path="pretrained_models/SoulX-Singer-Preprocess/speech_seaco_paraformer_large_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
-            en_model_path="pretrained_models/SoulX-Singer-Preprocess/parakeet-tdt-0.6b-v2/parakeet-tdt-0.6b-v2.nemo",
-            device=device
-        )
-        self.note_transcriber = NoteTranscriber(
-            rosvot_model_path="pretrained_models/SoulX-Singer-Preprocess/rosvot/rosvot/model.pt", 
-            rwbd_model_path="pretrained_models/SoulX-Singer-Preprocess/rosvot/rwbd/model.pt", 
-            device=device
-        )
+        if self.midi_transcribe:
+            self.vocal_detector = VocalDetector(
+                cut_wavs_output_dir=  f"{save_dir}/cut_wavs",
+            )
+            self.lyric_transcriber = LyricTranscriber(
+                zh_model_path="pretrained_models/SoulX-Singer-Preprocess/speech_seaco_paraformer_large_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
+                en_model_path="pretrained_models/SoulX-Singer-Preprocess/parakeet-tdt-0.6b-v2/parakeet-tdt-0.6b-v2.nemo",
+                device=device
+            )
+            self.note_transcriber = NoteTranscriber(
+                rosvot_model_path="pretrained_models/SoulX-Singer-Preprocess/rosvot/rosvot/model.pt", 
+                rwbd_model_path="pretrained_models/SoulX-Singer-Preprocess/rosvot/rwbd/model.pt", 
+                device=device
+            )
+        else:
+            self.vocal_detector = None
+            self.lyric_transcriber = None
+            self.note_transcriber = None
 
     def run(
         self,
         audio_path: str,
-        vocal_sep: bool = True,
-        max_merge_duration: int = 60000,
-        language: str = "Mandarin"
+        vocal_sep: bool = None,
+        max_merge_duration: int = None,
+        language: str = None,
     ) -> None:
         vocal_sep = self.vocal_sep if vocal_sep is None else vocal_sep
         max_merge_duration = self.max_merge_duration if max_merge_duration is None else max_merge_duration
@@ -81,7 +87,11 @@ class PreprocessPipeline:
             vocal_path = output_dir / "vocal.wav"
             sf.write(vocal_path, vocal, sample_rate)
 
-        vocal_f0 = self.f0_extractor.process(str(vocal_path))
+        vocal_f0 = self.f0_extractor.process(str(vocal_path), f0_path=str(vocal_path).replace(".wav", "_f0.npy"))
+
+        if not self.midi_transcribe or self.vocal_detector is None or self.lyric_transcriber is None or self.note_transcriber is None:
+            return
+
         segments = self.vocal_detector.process(str(vocal_path), f0=vocal_f0)
 
         metadata = []
@@ -124,10 +134,11 @@ def main(args):
         save_dir=args.save_dir,
         vocal_sep=args.vocal_sep,
         max_merge_duration=args.max_merge_duration,
+        midi_transcribe=args.midi_transcribe,
     )
     pipeline.run(
         audio_path=args.audio_path,
-        language=args.language
+        language=args.language,
     )
 
 
@@ -139,8 +150,12 @@ if __name__ == "__main__":
     parser.add_argument("--save_dir", type=str, required=True, help="Directory to save the output files")
     parser.add_argument("--language", type=str, default="Mandarin", help="Language of the audio")
     parser.add_argument("--device", type=str, default="cuda:0", help="Device to run the models on")
-    parser.add_argument("--vocal_sep", type=bool, default=True, help="Whether to perform vocal separation")
+    parser.add_argument("--vocal_sep", type=str, default="True", help="Whether to perform vocal separation")
     parser.add_argument("--max_merge_duration", type=int, default=60000, help="Maximum merged segment duration in milliseconds")    
+    parser.add_argument("--midi_transcribe", type=str, default="True", help="Whether to do MIDI transcription")
     args = parser.parse_args()
+
+    args.vocal_sep = args.vocal_sep.lower() == "true"
+    args.midi_transcribe = args.midi_transcribe.lower() == "true"
 
     main(args)

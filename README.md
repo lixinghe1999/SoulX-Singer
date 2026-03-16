@@ -21,19 +21,26 @@
 
 ## 🎵 Overview
 
-**SoulX-Singer** is a high-fidelity, zero-shot singing voice synthesis model that enables users to generate realistic singing voices for unseen singers.  
-It supports **melody-conditioned (F0 contour)** and **score-conditioned (MIDI notes)** control for precise pitch, rhythm, and expression.
+**SoulX-Singer** is a high-fidelity, zero-shot singing voice synthesis model that enables users to generate realistic singing voices for unseen singers. It supports **melody-conditioned (F0 contour)** and **score-conditioned (MIDI notes)** control for precise pitch, rhythm, and expression.
+
+**SoulX-Singer-SVC** is a singing voice conversion (SVC) model finetuned from **SoulX-Singer**. Singing Voice Conversion aims to transform a source singing recording into the target singer’s voice while preserving the original melody, rhythm, and lyrical content. Based on the strong generative capability of SoulX-Singer, SoulX-Singer-SVC enables high-quality singing voice conversion directly from raw singing audio, without requiring lyric or MIDI transcriptions.
 
 ---
 
 ## ✨ Key Features
 
+#### SoulX-Singer
 - **🎤 Zero-Shot Singing** – Generate high-fidelity voices for unseen singers, no fine-tuning needed.  
 - **🎵 Flexible Control Modes** – Melody (F0) and Score (MIDI) conditioning.  
 - **📚 Large-Scale Dataset** – 42,000+ hours of aligned vocals, lyrics, notes across Mandarin, English, Cantonese.  
 - **🧑‍🎤 Timbre Cloning** – Preserve singer identity across languages, styles, and edited lyrics.  
 - **✏️ Singing Voice Editing** – Modify lyrics while keeping natural prosody.  
 - **🌐 Cross-Lingual Synthesis** – High-fidelity synthesis by disentangling timbre from content.  
+
+#### SoulX-Singer-SVC
+- **🎙️ Zero-Shot Timbre and Style Transfer** – Transfer singer identity and style to unseen voices without per-speaker fine-tuning.
+- **🌍 Language-Agnostic Conversion** – Works across multilingual singing content.
+- **🔄 Transcription-Free Audio-to-Audio Conversion** – Convert target singing directly without lyrics transcription or MIDI inputs.
 
 ---
 
@@ -45,7 +52,7 @@ It supports **melody-conditioned (F0 contour)** and **score-conditioned (MIDI no
 
 ## 🎬 Demo Examples
 
-
+### Singing Voice Synthesis (SVS)
 <div align="center">
 
 <https://github.com/user-attachments/assets/13306f10-3a29-46ba-bcef-d6308d05cbcc>
@@ -57,9 +64,17 @@ It supports **melody-conditioned (F0 contour)** and **score-conditioned (MIDI no
 
 </div>
 
+### Singing Voice Conversion (SVC)
+<div align="center">
+
+<https://github.com/user-attachments/assets/aed15fc9-14c3-44fc-9146-f6d9fef894d3>
+
+</div>
+
 ---
 
 ## 📰 News
+- **[2026-03-16]** [SoulX-Singer-SVC](https://huggingface.co/Soul-AILab/SoulX-Singer/blob/main/model-svc.pt) is released, and [SoulX-Singer Online Demo](https://huggingface.co/spaces/Soul-AILab/SoulX-Singer) has been updated to support singing voice conversion (SVC).
 - **[2026-02-12]** [SoulX-Singer Eval Dataset](https://huggingface.co/datasets/Soul-AILab/SoulX-Singer-Eval-Dataset) is now available on Hugging Face Datasets.
 - **[2026-02-09]** [SoulX-Singer Online Demo](https://huggingface.co/spaces/Soul-AILab/SoulX-Singer) is live on Hugging Face Spaces — try singing voice synthesis in your browser.
 - **[2026-02-08]** [MIDI Editor](https://huggingface.co/spaces/Soul-AILab/SoulX-Singer-Midi-Editor) is available on Hugging Face Spaces.
@@ -105,11 +120,11 @@ Install Hugging Face Hub if needed:
 pip install -U huggingface_hub
 ```
 
-Download the SVS model and preprocessing models:
+Download the SVS, SVC model and preprocessing models:
 ```sh
 pip install -U huggingface_hub
 
-# Download the SoulX-Singer SVS model
+# Download the SoulX-Singer SVS and SVC model
 hf download Soul-AILab/SoulX-Singer --local-dir pretrained_models/SoulX-Singer
 
 # Download models required for preprocessing
@@ -119,7 +134,7 @@ hf download Soul-AILab/SoulX-Singer-Preprocess --local-dir pretrained_models/Sou
 
 ### 4. Run the Demo
 
-Run the inference demo:
+#### Run the SVS inference demo
 ``` sh
 bash example/infer.sh
 ```
@@ -132,12 +147,28 @@ The metadata produced by the automatic preprocessing pipeline may not perfectly 
 How to use the Midi-Editor:
 - [Eiditing Metadata with Midi-Editor](preprocess/README.md#L104-L105)
 
+#### Run the SVC inference demo
+
+```sh
+bash example/infer_svc.sh
+```
+
+This example performs audio-to-audio SVC, converting the target singing into the prompt timbre using waveform and F0 inputs.
+To prepare your own SVC data, run `example/preprocess.sh` with `midi_transcribe=False`.
+
+
 
 ### 🌐 WebUI
 
-You can launch the interactive interface with:
+You can launch the interactive interface for SVS (Synthesised from lyrics and MIDI transcriptions) with:
 ```
 python webui.py
+```
+
+For SVC WebUI (audio-to-audio conversion):
+
+```
+python webui_svc.py
 ```
 
 
@@ -150,7 +181,7 @@ python webui.py
 - [x] 📊 Release the SoulX-Singer-Eval benchmark  
 - [ ] 🎹 Inference support for user-friendly MIDI-based input
 - [ ] 📚 Comprehensive tutorials and usage documentation  
-- [ ] 🎵 Support for wav-to-wav singing voice conversion (without transcription)
+- [x] 🎵 Support for wav-to-wav singing voice conversion (without transcription)
 
 
 ## 🙏 Acknowledgements

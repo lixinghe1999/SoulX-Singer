@@ -17,6 +17,7 @@ def build_model(
     model_path: str,
     config: DictConfig,
     device: str = "cuda",
+    use_fp16: bool = False,
 ):
     """
     Build the model from the pre-trained model path and model configuration.
@@ -25,9 +26,10 @@ def build_model(
         model_path (str): Path to the checkpoint file.
         config (DictConfig): Model configuration.
         device (str, optional): Device to use. Defaults to "cuda".
+        use_fp16 (bool, optional): If True and device is CUDA, convert model to FP16 after load. Defaults to False.
 
     Returns:
-        Tuple[torch.nn.Module, torch.nn.Module]: The initialized model and vocoder.
+        SoulXSinger: The initialized model.
     """
 
     if not os.path.isfile(model_path):
@@ -39,7 +41,7 @@ def build_model(
     print("Model initialized.")
     print("Model parameters:", sum(p.numel() for p in model.parameters()) / 1e6, "M")
     
-    checkpoint = torch.load(model_path, weights_only=False, map_location=device)
+    checkpoint = torch.load(model_path, weights_only=False, map_location="cpu")
     if "state_dict" not in checkpoint:
         raise KeyError(
             f"Checkpoint at {model_path} has no 'state_dict' key. "
@@ -47,6 +49,10 @@ def build_model(
         )
     model.load_state_dict(checkpoint["state_dict"], strict=True)
     
+    if use_fp16 and ((isinstance(device, str) and device.startswith("cuda")) or (hasattr(device, "type") and getattr(device, "type", None) == "cuda")):
+        model.half()
+        model.mel.float()
+        print("Model converted to FP16 (mel kept in FP32).")
     model.eval()
     model.to(device)
     print("Model checkpoint loaded.")
@@ -104,6 +110,7 @@ def process(args, config, model: torch.nn.Module):
                 n_steps=config.infer.n_steps,
                 cfg=config.infer.cfg,
                 control=args.control,
+                use_fp16=args.use_fp16,
             )
 
         generated_audio = generated_audio.squeeze().cpu().numpy()
@@ -119,6 +126,7 @@ def main(args, config):
         model_path=args.model_path,
         config=config,
         device=args.device,
+        use_fp16=getattr(args, "use_fp16", False),
     )
     process(args, config, model)
 
@@ -141,7 +149,14 @@ if __name__ == "__main__":
         choices=["melody", "score"],
         help="Control mode: melody or score only",
     )
+    parser.add_argument(
+        "--fp16",
+        action="store_true",
+        default=False,
+        help="Use FP16 inference (faster on GPU)",
+    )
     args = parser.parse_args()
-    
+    args.use_fp16 = args.fp16
+
     config = load_config(args.config)
     main(args, config)

@@ -273,8 +273,9 @@ def _control_to_internal(control: str) -> str:
 
 
 class AppState:
-    def __init__(self) -> None:
+    def __init__(self, use_fp16: bool = False) -> None:
         self.device = _get_device()
+        self.use_fp16 = use_fp16 and ("cuda" in self.device)
         self.preprocess_pipeline = PreprocessPipeline(
             device=self.device,
             language="Mandarin",
@@ -288,6 +289,7 @@ class AppState:
             model_path="pretrained_models/SoulX-Singer/model.pt",
             config=config,
             device=self.device,
+            use_fp16=self.use_fp16,
         )
         self.phoneset_path = "soulxsinger/utils/phoneme/phone_set.json"
         self.midi_parser = MidiParser(
@@ -345,6 +347,7 @@ class AppState:
         args.auto_shift = auto_shift
         args.pitch_shift = int(pitch_shift)
         args.control = control
+        args.use_fp16 = self.use_fp16
         try:
             svs_process(args, self.svs_config, self.svs_model)
             gc.collect()
@@ -392,7 +395,7 @@ class AppState:
         return True, "svs inference done", merged
 
 
-APP_STATE = AppState()
+APP_STATE = AppState(use_fp16="--fp16" in sys.argv)
 
 def _edit_metadata(
     meta,
@@ -880,6 +883,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=7860, help="Gradio server port")
     parser.add_argument("--share", action="store_true", help="Create public link")
+    parser.add_argument("--fp16", action="store_true", help="Use FP16 for SVS model and inference")
     args = parser.parse_args()
 
     page = render_interface()

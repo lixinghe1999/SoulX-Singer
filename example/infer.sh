@@ -25,4 +25,5 @@ python -m cli.inference \
     --phoneset_path $phoneset_path \
     --save_dir $save_dir \
     --auto_shift \
-    --pitch_shift 0
+    --pitch_shift 0 \
+    --fp16

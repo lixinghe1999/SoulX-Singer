@@ -425,8 +425,14 @@ class ISTFTHead(FourierHead):
         # phase = torch.atan2(y, x)
         # S = mag * torch.exp(phase * 1j)
         # better directly produce the complex value
+        
+        # Always compute complex values in float32 to avoid ComplexHalf warning (then cast audio back if needed)
+        orig_dtype = mag.dtype
+        mag, x, y = mag.float(), x.float(), y.float()
         S = mag * (x + 1j * y)
         audio = self.istft(S)
+        if orig_dtype != torch.float32:
+            audio = audio.to(orig_dtype)
         return audio
 
 
