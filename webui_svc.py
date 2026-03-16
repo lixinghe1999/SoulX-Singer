@@ -1,6 +1,7 @@
 import random
 import sys
 import traceback
+import gc
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
@@ -165,6 +166,9 @@ class AppState:
 			vocal_f0 = save_path / "vocal_f0.npy"
 			if not vocal_wav.exists() or not vocal_f0.exists():
 				return False, f"preprocess output missing: {vocal_wav} or {vocal_f0}", None, None
+			gc.collect()
+			if torch.cuda.is_available():
+				torch.cuda.empty_cache()
 			return True, "ok", vocal_wav, vocal_f0
 		except Exception as e:
 			return False, f"preprocess failed: {e}", None, None
@@ -241,7 +245,9 @@ class AppState:
 						mixed_path = save_dir / "generated_mixed.wav"
 						sf.write(str(mixed_path), mixed, mix_sr)
 						generated = mixed_path
-
+			gc.collect()
+			if torch.cuda.is_available():
+				torch.cuda.empty_cache()
 			return True, "svc inference done", generated
 		except Exception as e:
 			return False, f"svc inference failed: {e}", None
