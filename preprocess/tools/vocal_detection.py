@@ -289,6 +289,9 @@ class VocalDetector:
             key = f"{base_name_no_ext}_{idx}"
             start_sample = librosa.time_to_samples(start_ms / 1000, sr=sr)
             end_sample = librosa.time_to_samples(end_ms / 1000, sr=sr)
+            # Use Python int to avoid 32-bit overflow on Windows
+            start_sample = int(start_sample)
+            end_sample = int(end_sample)
             segment = y[start_sample:end_sample]
 
             write(f"{self.cut_wavs_output_dir}/{key}.wav", segment, sr)

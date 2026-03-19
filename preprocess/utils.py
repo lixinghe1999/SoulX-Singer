@@ -109,10 +109,11 @@ def _merge_group(
     )
 
     # ---------- time & audio ----------
-    start_ms = get_attr(segments[0], "start_time_ms", 0)
-    end_ms = get_attr(segments[-1], "end_time_ms", 0) + end_extension_ms
-    start_sample = start_ms * sample_rate // 1000
-    end_sample = end_ms * sample_rate // 1000
+    # Use Python int to avoid 32-bit overflow on Windows
+    start_ms = int(get_attr(segments[0], "start_time_ms", 0))
+    end_ms = int(get_attr(segments[-1], "end_time_ms", 0)) + end_extension_ms
+    start_sample = int(start_ms * sample_rate // 1000)
+    end_sample = int(end_ms * sample_rate // 1000)
 
     # ---------- naming ----------
     first_item_name = get_attr(segments[0], "item_name", "segment")
@@ -195,12 +196,11 @@ def merge_short_segments(
 
     for seg in segments:
         if isinstance(seg, dict):
-            start_time = seg.get("start_time_ms", 0)
-            end_time = seg.get("end_time_ms", 0)
+            start_time = int(seg.get("start_time_ms", 0))
+            end_time = int(seg.get("end_time_ms", 0))
         else:
-            start_time = seg.start_time_ms
-            end_time = seg.end_time_ms
-        
+            start_time = int(seg.start_time_ms)
+            end_time = int(seg.end_time_ms)
         if (
             current_group
             and (start_time - prev_end > max_gap_ms
